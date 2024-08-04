@@ -28,5 +28,3 @@ class CustomUserAdmin(UserAdmin):
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(Session)
 admin.site.register(UserPermissions)
-admin.site.register(Organization)
-admin.site.register(OrganizationCredentials)
