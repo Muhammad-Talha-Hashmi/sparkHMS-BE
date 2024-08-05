@@ -3,9 +3,9 @@ DEPLOYED = True
 
 Default_Database_Configuration = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'hms_db',
-        'USER': 'postgres',
-        'PASSWORD': 'Malik@0900',
+        'NAME': 'sparkhms',
+        'USER': 'spark_hms_db_admin',
+        'PASSWORD': 'admin@123',
         'HOST': 'localhost',
         'PORT': '5432',
     }

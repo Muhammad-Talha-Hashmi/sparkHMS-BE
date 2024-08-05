@@ -7,5 +7,5 @@ urlpatterns = [
     path('change_password/', views.ChangePassword.as_view()),
     path('delete_user/', views.DeleteUser.as_view()),
     path('user_list/', views.GetUsers.as_view()),
-    path('organization/', views.ManageOrganization.as_view()),
+
 ]

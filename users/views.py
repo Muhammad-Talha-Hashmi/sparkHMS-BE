@@ -1,25 +1,23 @@
-from django.shortcuts import render
-from utils.responses import internal_server_error, bad_request, created, not_found, ok
-from rest_framework.exceptions import ValidationError
-from rest_framework.views import APIView
 import traceback
-from .serializer import *
-from .models import *
-from django.contrib.auth.models import User
-import jwt
-from datetime import datetime, timedelta
 from django.contrib.auth import authenticate
-from django.views.decorators.csrf import csrf_exempt
-import json
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
+from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from organization.models import Organization
+from organization.serializer import OrganizationCreateSerializer
+from utils.responses import internal_server_error, bad_request, created, not_found, ok
+from .models import *
+from .serializer import *
 
 User = get_user_model()
 
-# Create your views here.
 # Create your views here.
 class SignUp(APIView):
     def post(self, request):
@@ -61,26 +59,27 @@ class Login(APIView):
             print(traceback.format_exc())
             return internal_server_error(message=error_message)
 
+
 class ChangePassword(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         email = request.data.get('email')
-        print(email)
-        serializer = ChangePasswordSerializer(data=request.data)
-        if serializer.is_valid():
-            password = serializer.validated_data['password']
-            user_instance = User.objects.filter(email=email).first()
-            if user_instance:
-                print('call')
-                user_instance.set_password(password)
-                user_instance.is_first_time_login = False
-                user_instance.reset_token = None
-                user_instance.save()
-                return ok(data='null', message='Password changed successfully')
-            return bad_request(message='User does not exist')
-        return internal_server_error(message=serializer.errors)
+        password = request.data.get('password')
+
+        if not email or not password:
+            return Response({'message': 'Email and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_instance = User.objects.filter(email=email).first()
+        if user_instance:
+            user_instance.set_password(password)
+            user_instance.is_first_time_login = False
+            user_instance.reset_token = None
+            user_instance.save()
+            return Response({'data': 'null', 'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
+
+        return Response({'message': 'User does not exist'}, status=status.HTTP_400_BAD_REQUEST)
 
 class GetUsers(APIView): 
     authentication_classes = [JWTAuthentication]
@@ -153,7 +152,7 @@ class ManageOrganization(APIView):
             try:
                 organizationId= request.data.get('org_id',None)
                 organizationData = Organization.objects.get(org_id=organizationId)
-            except OrganizationTable.DoesNotExist:
+            except Organization.DoesNotExist:
                 return not_found(message="Organization not found")
 
             data = request.data
@@ -174,7 +173,7 @@ class ManageOrganization(APIView):
             organizationId= request.GET.get('id', None)
             try:
                 organizationInstance = Organization.objects.filter(org_id=organizationId).first()
-            except organizationInstance.DoesNotExist:
+            except Organization.DoesNotExist:
                 # Handle the case where the object is not found
                 messageData="Organization not found with id : ".format(organizationId)
                 return bad_request(message=messageData)

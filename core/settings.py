@@ -48,7 +48,9 @@ INSTALLED_APPS = [
     'staff',
     'house_keeping',
     'rooms',
-    'organization'
+    'organization',
+    'accounts'
+
 ]
 
 MIDDLEWARE = [

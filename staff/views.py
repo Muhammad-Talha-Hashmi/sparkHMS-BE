@@ -3,7 +3,7 @@ from utils.responses import internal_server_error, bad_request, created, not_fou
 from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 import traceback
-from .serilizer import *
+from .serializers import *
 from .models import *
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated

@@ -1,28 +1,12 @@
-from django.db import models
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
+from django.db import models
 
-from utils.enum import Types
-from utils.methods import organization_key_generator
-from core.settings import AUTH_USER_MODEL
 from organization.models import Hotel
+from utils.enum import Types
 
 type_obj = Types()
-class Base(models.Model):
-    created_by = models.ForeignKey(AUTH_USER_MODEL, null=True, blank=True,
-                                   related_name="created_by", on_delete=models.CASCADE)
-    created_datetime = models.DateTimeField(auto_now_add=True)
-    modified_by = models.ForeignKey(AUTH_USER_MODEL, blank=True, related_name="%(app_label)s_%(class)s_modified_by",
-                                    null=True, on_delete=models.CASCADE)
-    modified_datetime = models.DateTimeField(blank=True, null=True)
-    status = models.PositiveSmallIntegerField(default=2, null=True, blank=True)
-
-    class Meta:
-        abstract = True
-
-
-# Create your models here.
 
 
 class UserManager(BaseUserManager):
