@@ -38,6 +38,11 @@ class Hotel(Base):
     website = models.CharField(max_length=60, null=True, blank=True)
     organization = models.ForeignKey(Organization, related_name='hotel_organization_fk', null=True, blank=True,
                                      on_delete=models.CASCADE)
+    created_by = models.ForeignKey(AUTH_USER_MODEL, null=True, blank=True,
+                                   related_name="user_created_by", on_delete=models.CASCADE)
+    modified_by = models.ForeignKey(AUTH_USER_MODEL, blank=True, related_name="user_modified_by",
+                                    null=True, on_delete=models.CASCADE)
+
 
 
 class HotelInventory(models.Model):
