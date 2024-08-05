@@ -8,17 +8,16 @@ from .models import *
 class CustomUserAdmin(UserAdmin):
     fieldsets = (
         ('User Credentials', {
-            'fields': ('email', 'username', 'password', 'first_name', 'last_name', 'full_name', 'phone_number',)
+            'fields': ('email', 'password', 'first_name', 'last_name', 'full_name', 'phone_number',)
         }),
         ('User Groups', {
-            'fields': ('groups', 'user_permissions',)
+            'fields': ('groups',)
         }),
         ('Basic', {
-            'fields': ('unique_code', 'date_of_birth', 'organization',
+            'fields': ('unique_code', 'date_of_birth', 'hotel',
                        'user_image', 'type', 'is_staff', 'is_active', 'is_organization_admin', 'is_super_admin',
                        'is_first_time_login', 'last_login', 'date_joined', 'created_by', 'modified_by',
-                       'modified_datetime', 'status', 'google_access_token', 'google_refresh_token',
-                       'google_token_expiry',)
+                       'modified_datetime', 'status',)
         }),
     )
     readonly_fields = ['date_joined']

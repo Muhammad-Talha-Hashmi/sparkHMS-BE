@@ -1,8 +1,9 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.serializers import (ModelSerializer, DateField, ValidationError,
-                                        SerializerMethodField, ImageField, CharField, EmailField, IntegerField,Serializer )
+                                        SerializerMethodField, ImageField, CharField, EmailField, IntegerField,Serializer,PrimaryKeyRelatedField, BooleanField )
 from .models import User
 from utils.enum import Types
+from organization.models import Hotel, Organization
 
 type_obj = Types()
 
@@ -18,6 +19,10 @@ class UserSerializer(ModelSerializer):
     created_by_id = IntegerField(required=False, allow_null=True)
     status = CharField(required=False, default=1)
     type = CharField(required=False, allow_null=True)
+    is_organization_admin = BooleanField(required=False, allow_null=True)
+    is_super_admin = BooleanField(required=False, allow_null=True)
+    organization = PrimaryKeyRelatedField(queryset=Organization.objects.all(), required=False)
+    hotel = PrimaryKeyRelatedField(queryset=Hotel.objects.all(), required=False)
 
     def validate_type(self, value):
         type_value = type_obj.get_user_type(value)
@@ -37,7 +42,7 @@ class UserSerializer(ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'last_name', 'full_name', 'email', 'unique_code', 'username', 'date_of_birth',
                   'user_image', 'password', 'created_by_id', 'type',
-                  'status']
+                  'status','organization',"hotel",'is_super_admin','is_organization_admin']
 
 
 class GetUserSerializer(ModelSerializer):
@@ -46,6 +51,7 @@ class GetUserSerializer(ModelSerializer):
     status = SerializerMethodField('get_status', required=False)
     full_name = SerializerMethodField('get_name', required=False)
     api_token = SerializerMethodField('get_api_token', required=False)
+    groups = SerializerMethodField('get_groups', required=False)
 
     def get_user_image(self, obj):
         try:
@@ -64,6 +70,12 @@ class GetUserSerializer(ModelSerializer):
 
     def get_name(self, obj):
         return str(obj.full_name)
+    
+    def get_groups(self, obj):
+        groups = []
+        for group in obj.groups.all():
+            groups.append(group.name)
+        return groups
 
     def get_api_token(self, obj):
         # Try to get an existing token for the user
@@ -75,7 +87,7 @@ class GetUserSerializer(ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'last_name', 'full_name', 'email', 'username', 'date_of_birth', 'user_image',
                   'type','api_token',
-                  'created_by_id', 'status', 'date_joined', 'is_active', 'is_organization_admin', 'organization_id']
+                  'created_by_id', 'status', 'date_joined', 'is_active', 'hotel_id', 'is_super_admin', 'groups']
 
 
 class UpdateUserSerializer(ModelSerializer):
@@ -124,7 +136,7 @@ class GetUserForExtensionSerializer(ModelSerializer):
     type = SerializerMethodField('get_type', required=False)
     status = SerializerMethodField('get_status', required=False)
     full_name = SerializerMethodField('get_name', required=False)
-    organization_name = SerializerMethodField('get_organization_name', required=False)
+    hotel_name = SerializerMethodField('get_hotel_name', required=False)
     def get_type(self, obj):
         return type_obj.get_user_type(obj.type)
 
@@ -134,12 +146,12 @@ class GetUserForExtensionSerializer(ModelSerializer):
     def get_name(self, obj):
         return str(obj.full_name)
 
-    def get_organization_name(self, obj):
-        return str(obj.organization.name)
+    def get_hotel_name(self, obj):
+        return str(obj.hotel.name)
 
 
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'full_name', 'email', 'username',
-                  'type', 'status', 'is_active', 'organization_id','organization_name']
+                  'type', 'status', 'is_active', 'hotel_id','hotel_name']
 

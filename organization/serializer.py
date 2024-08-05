@@ -21,7 +21,7 @@ class GetOrganizationSerializer(ModelSerializer):
         return type_obj.get_status(status=obj.status)
     class Meta:
         model = Organization
-        fields = ['org_id', 'name', 'address', 'use_saml', 'status', 'display_name', 'created_datetime', 'modified_datetime']
+        fields = ['org_id', 'name', 'address', 'use_saml', 'status', 'display_name']
 
 class ChangePasswordSerializer(Serializer):
     password = CharField(required=True, write_only=True)

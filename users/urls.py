@@ -7,5 +7,7 @@ urlpatterns = [
     path('change_password/', views.ChangePassword.as_view()),
     path('delete_user/', views.DeleteUser.as_view()),
     path('user_list/', views.GetUsers.as_view()),
-
+    path('manage/', views.ManageUsers.as_view()),
+    path('manage/<int:id>/', views.ManageUsers.as_view()),
+    # path('refreshToken/', views.RefreshTokenView.as_view()),
 ]

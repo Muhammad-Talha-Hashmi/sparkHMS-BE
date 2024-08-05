@@ -26,7 +26,7 @@ class ManageOrganization(APIView):
 
     def get(self, request):
         try: 
-            all_Organization = Organization.objects.order_by('-created_date')
+            all_Organization = Organization.objects.all()
             resultdata=[]
             if all_Organization.exists():
                 paginator = PageNumberPagination()

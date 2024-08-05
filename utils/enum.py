@@ -2,7 +2,7 @@ class Types:
     def get_user_type(self, user_type):
         """Returns a random key for given type."""
 
-        user_type_dict = {'Organization Admin': 1, 'User': 2}
+        user_type_dict = {'Organization Admin': 1, 'Hotel Admin': 2, 'Account Manager':3, 'Front Desk':4,'Staff':5}
         if type(user_type).__name__ == 'int':
             for key, value in user_type_dict.items():
                 if value == user_type:

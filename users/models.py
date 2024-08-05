@@ -3,7 +3,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 
-from organization.models import Hotel
+from organization.models import Hotel, Organization
 from utils.enum import Types
 
 type_obj = Types()
@@ -42,6 +42,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(max_length=120, null=True, blank=True)
     username = models.CharField(max_length=254, blank=True, null=True)
     hotel = models.ForeignKey(Hotel, related_name='user_hotel_fk', null=True, blank=True,
+                                     on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, related_name='user_organization_fk', null=True, blank=True,
                                      on_delete=models.CASCADE)
     date_of_birth = models.DateField(null=True, blank=True)
     user_image = models.ImageField(upload_to='assets/', default='assets/no_image.png', null=True, blank=True)
@@ -93,7 +95,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         try:
-            return self.username
+            return self.email
         except:
             return "User"
 
