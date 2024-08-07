@@ -36,7 +36,7 @@ class Hotel(Base):
     contact_no = models.CharField(max_length=16, null=True, blank=True)
     contact_email = models.CharField(max_length=30, null=True, blank=True)
     website = models.CharField(max_length=60, null=True, blank=True)
-    organization = models.ForeignKey(Organization, related_name='hotel_organization_fk', null=True, blank=True,
+    organization = models.ForeignKey(Organization, related_name='hotel_organization_fk',
                                      on_delete=models.CASCADE)
     created_by = models.ForeignKey(AUTH_USER_MODEL, null=True, blank=True,
                                    related_name="user_created_by", on_delete=models.CASCADE)

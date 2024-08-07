@@ -4,6 +4,7 @@ from rest_framework.serializers import (ModelSerializer, DateField, ValidationEr
 from .models import User
 from utils.enum import Types
 from organization.models import Hotel, Organization
+from django.contrib.auth.models import Group
 
 type_obj = Types()
 
@@ -21,7 +22,6 @@ class UserSerializer(ModelSerializer):
     type = CharField(required=False, allow_null=True)
     is_organization_admin = BooleanField(required=False, allow_null=True)
     is_super_admin = BooleanField(required=False, allow_null=True)
-    organization = PrimaryKeyRelatedField(queryset=Organization.objects.all(), required=False)
     hotel = PrimaryKeyRelatedField(queryset=Hotel.objects.all(), required=False)
 
     def validate_type(self, value):
@@ -32,7 +32,19 @@ class UserSerializer(ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)
+        temp_type = validated_data.get('type', 5)
+        type=type_obj.get_user_type(temp_type)
         instance = self.Meta.model(**validated_data)
+        # Assign the user to the corresponding group
+        if type:
+            try:
+                group = Group.objects.get(name=type)
+                instance.save()  # Save the instance before adding to group
+                instance.groups.add(group)
+            except Group.DoesNotExist:
+                raise ValidationError(f"Group '{type}' does not exist.")
+        
+        
         if password is not None:
             instance.set_password(password)
         instance.save()
@@ -42,7 +54,7 @@ class UserSerializer(ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'last_name', 'full_name', 'email', 'unique_code', 'username', 'date_of_birth',
                   'user_image', 'password', 'created_by_id', 'type',
-                  'status','organization',"hotel",'is_super_admin','is_organization_admin']
+                  'status',"hotel",'is_super_admin','is_organization_admin']
 
 
 class GetUserSerializer(ModelSerializer):
@@ -52,6 +64,7 @@ class GetUserSerializer(ModelSerializer):
     full_name = SerializerMethodField('get_name', required=False)
     api_token = SerializerMethodField('get_api_token', required=False)
     groups = SerializerMethodField('get_groups', required=False)
+    
 
     def get_user_image(self, obj):
         try:

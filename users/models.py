@@ -43,8 +43,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=254, blank=True, null=True)
     hotel = models.ForeignKey(Hotel, related_name='user_hotel_fk', null=True, blank=True,
                                      on_delete=models.CASCADE)
-    organization = models.ForeignKey(Organization, related_name='user_organization_fk', null=True, blank=True,
-                                     on_delete=models.CASCADE)
     date_of_birth = models.DateField(null=True, blank=True)
     user_image = models.ImageField(upload_to='assets/', default='assets/no_image.png', null=True, blank=True)
     phone_number = models.CharField(max_length=30, null=True, blank=True)

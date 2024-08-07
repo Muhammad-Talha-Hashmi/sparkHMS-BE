@@ -23,7 +23,6 @@ class SignUp(APIView):
     def post(self, request):
         try: 
             payload = request.data
-            print(payload)
             serializer = UserSerializer(data=payload)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -195,9 +194,8 @@ class ManageUsers(APIView):
             # Create a list of group names
             group_names = [group.name for group in groups]
             type= request.data.get('type')
-            if type=='Organization Admin' and 'Super Admin' in group_names:
+            if 'Super Admin' in group_names or 'Hotel Admin' in group_names or 'Organization Admin' in group_names:
                 payload = request.data
-                print(payload)
                 serializer = UserSerializer(data=payload)
                 if serializer.is_valid(raise_exception=True):
                     serializer.save()
@@ -212,13 +210,7 @@ class ManageUsers(APIView):
         try: 
             print(id)
             if id is not None:
-                user = User.objects.filter(id=id)
-                if user.exists():
-                    serializer = GetUserSerializer(user)
-                    return ok(data=serializer.data)
-            else:
-                print('call')
-                all_users = User.objects.filter(is_organization_admin=True).order_by('-date_joined')
+                all_users = User.objects.filter(is_organization_admin=False,is_super_admin=False,hotel=id).order_by('-date_joined')
                 resultdata=[]
                 if all_users.exists():
                     paginator = PageNumberPagination()
@@ -228,6 +220,8 @@ class ManageUsers(APIView):
                     return paginator.get_paginated_response(serializer.data)
                 else:
                     return ok(data=resultdata)
+            else:
+                bad_request(message="Hotel id is missing")
            
             
         except Exception as err:
