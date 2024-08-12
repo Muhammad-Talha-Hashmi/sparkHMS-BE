@@ -18,22 +18,25 @@ class ManageStaff(APIView):
         serializer = StaffSerializer(data=request.data)
         if serializer.is_valid():
                 serializer.save()
-                message = f"{serializer.validated_data.get('name')} created Successfully "   
-                return created(data=serializer.validated_data, message=message)                    
+                message = f"{payload.get('name')} created Successfully "   
+                return created(data=payload, message=message)                    
         return internal_server_error(message=serializer.errors)
 
-    def get(self, request):
+    def get(self, request, id=None):
         try: 
-            all_staffs = staffTable.objects.filter(is_active=True).order_by('-date_joined')
-            resultdata=[]
-            if all_staffs.exists():
-                paginator = PageNumberPagination()
-                paginator.page_size = 10
-                result_page = paginator.paginate_queryset(all_staffs, request)
-                serializer = StaffSerializer(result_page, context={'request': request}, many=True)
-                return paginator.get_paginated_response(serializer.data)
+            if id is not None:
+                all_staffs = staffTable.objects.filter(hotel=id,is_active=True).order_by('-date_joined')
+                resultdata=[]
+                if all_staffs.exists():
+                    paginator = PageNumberPagination()
+                    paginator.page_size = 10
+                    result_page = paginator.paginate_queryset(all_staffs, request)
+                    serializer = StaffSerializer(result_page, context={'request': request}, many=True)
+                    return paginator.get_paginated_response(serializer.data)
+                else:
+                    return ok(data=resultdata)
             else:
-                return ok(data=resultdata)
+                bad_request(message="Hotel id is missing")
             
         except Exception as err:
             print(traceback.format_exc())
