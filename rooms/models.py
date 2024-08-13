@@ -4,23 +4,36 @@ from organization.models import Hotel, HotelInventory
 from utils.base_model import Base
 
 
-# Create your models here.
-class Amenities(models.Model):
-    name = models.CharField(max_length=100)
 
+
+class RoomAmeneties(Base):
+    name = models.CharField(max_length=120, null=False, blank=False)
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='hotel_amentities_fk')
+
+
+class RoomServices(Base):
+    name = models.CharField(max_length=120, null=False, blank=False)
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='hotel_services_fk')
+
+
+class BedType(Base):
+    name = models.CharField(max_length=120, null=False, blank=False)
+    number_of_person =models.IntegerField(default=1)
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='hotel_bedtype_fk')
 
 class Room(Base):
-    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='rooms')
-    Name = models.CharField(max_length=120, null=True, blank=True)
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='hotel_rooms_fk')
+    room = models.CharField(max_length=120, null=True, blank=True)
     room_type = models.CharField(max_length=60, null=True, blank=True)
-    bed_type = models.CharField(max_length=60, null=True, blank=True)
+    number_of_bed =models.IntegerField(default=1)
+    bed_type = models.ForeignKey(BedType, null=True, blank=True, on_delete=models.CASCADE,)
     price = models.CharField(max_length=120, null=True, blank=True)
-    amenities = models.ManyToManyField(Amenities, null=True, blank=True)
+    amenities = models.ManyToManyField(RoomAmeneties, blank=True)
+    services = models.ManyToManyField(RoomServices, blank=True)
     status = models.BooleanField(default=False)
     is_house_keeping = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True)
     notes = models.CharField(max_length=120, null=True, blank=True)
-
 
 class RoomBooking(Base):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='bookings')
@@ -65,21 +78,3 @@ class OrderItem(Base):
     def __str__(self):
         item_name = self.inventory_item.item_name if self.inventory_item else self.kitchen_item.item_name
         return f"{item_name} (x{self.quantity})"
-
-class RoomAmeneties(Base):
-    name = models.CharField(max_length=120, null=False, blank=False)
-    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='hotel_amentities_fk')
-
-
-class RoomServices(Base):
-    name = models.CharField(max_length=120, null=False, blank=False)
-    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='hotel_services_fk')
-
-
-class BedType(Base):
-    name = models.CharField(max_length=120, null=False, blank=False)
-    number_of_person =models.IntegerField(default=1)
-    number_of_bed =models.IntegerField(default=1)
-    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='hotel_bedtype_fk')
-
-   

@@ -4,7 +4,9 @@ from rooms.models import *
 
 # Register your models here.
 admin.site.register(Room)
-admin.site.register(Amenities)
+admin.site.register(RoomAmeneties)
+admin.site.register(RoomServices)
+admin.site.register(BedType)
 admin.site.register(RoomBooking)
 admin.site.register(Invoice)
 admin.site.register(Order)

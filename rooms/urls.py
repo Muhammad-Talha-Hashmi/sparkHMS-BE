@@ -3,7 +3,11 @@ from . import views
 
 urlpatterns = [
     path('manage/', views.ManageRooms.as_view()),
+    path('manage/<int:id>/', views.ManageRooms.as_view()),
     path('amenities/', views.ManageAmenities.as_view()),
+    path('amenities/<int:id>/', views.ManageAmenities.as_view()),
     path('services/', views.ManageSerices.as_view()),
+    path('services/<int:id>/', views.ManageSerices.as_view()),
     path('bedtype/', views.ManageBedTypes.as_view()),
+    path('bedtype/<int:id>/', views.ManageBedTypes.as_view()),
 ]

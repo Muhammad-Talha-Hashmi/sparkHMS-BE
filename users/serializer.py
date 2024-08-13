@@ -5,6 +5,7 @@ from .models import User
 from utils.enum import Types
 from organization.models import Hotel, Organization
 from django.contrib.auth.models import Group
+from organization.serializer import HotelDropDownSerializer
 
 type_obj = Types()
 
@@ -64,7 +65,7 @@ class GetUserSerializer(ModelSerializer):
     full_name = SerializerMethodField('get_name', required=False)
     api_token = SerializerMethodField('get_api_token', required=False)
     groups = SerializerMethodField('get_groups', required=False)
-    
+    hotel = HotelDropDownSerializer()
 
     def get_user_image(self, obj):
         try:
@@ -100,7 +101,7 @@ class GetUserSerializer(ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'last_name', 'full_name', 'email', 'username', 'date_of_birth', 'user_image',
                   'type','api_token',
-                  'created_by_id', 'status', 'date_joined', 'is_active', 'hotel_id', 'is_super_admin', 'groups']
+                  'created_by_id', 'status', 'date_joined', 'is_active', 'hotel', 'is_super_admin', 'groups']
 
 
 class UpdateUserSerializer(ModelSerializer):

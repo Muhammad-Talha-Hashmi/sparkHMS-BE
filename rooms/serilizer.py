@@ -3,12 +3,17 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import *
 from organization.models import Hotel
+from organization.serializer import HotelDropDownSerializer
 
 class RoomsSerializer(serializers.ModelSerializer):
     hotel = serializers.PrimaryKeyRelatedField(queryset=Hotel.objects.all(), required=True)
+    bed_type = serializers.PrimaryKeyRelatedField(queryset=BedType.objects.all(), required=False, allow_null=True)
+    amenities = serializers.PrimaryKeyRelatedField(queryset=RoomAmeneties.objects.all(), many=True, required=False, allow_null=True)
+    services = serializers.PrimaryKeyRelatedField(queryset=RoomServices.objects.all(), many=True, required=False, allow_null=True)
     class Meta:
         model = Room
         fields = '__all__'
+
 class AmenitiesSerializer(serializers.ModelSerializer):
     hotel = serializers.PrimaryKeyRelatedField(queryset=Hotel.objects.all(), required=True)
     class Meta:
@@ -38,4 +43,28 @@ class RoomsListingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = ['id', 'room']
-        # Add other fields if there are any
+
+class AmenetiesListingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoomAmeneties
+        fields = ['id', 'name']
+
+class ServicesListingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoomServices
+        fields = ['id', 'name']
+
+class BedTypeListingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BedType
+        fields = ['id', 'name', 'number_of_person']
+
+class RoomGetterSerializer(serializers.ModelSerializer):
+    hotel = HotelDropDownSerializer()  # Use nested serializer for detailed representation
+    bed_type = BedTypeListingSerializer()  # Use nested serializer for detailed representation
+    amenities = AmenetiesListingSerializer(many=True)  # Use nested serializer for many-to-many fields
+    services = ServicesListingSerializer(many=True)  # Use nested serializer for many-to-many fields
+
+    class Meta:
+        model = Room
+        fields = '__all__'

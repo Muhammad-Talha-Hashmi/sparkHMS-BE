@@ -17,19 +17,7 @@ class ManageRooms(APIView):
 
     def post(self, request):
         try:
-            data = request.data
-            amenities = data['amenities']
-            amenities_ids_list = []
-            for name in amenities:
-                amenities_instance, _ = Amenities.objects.get_or_create(name=name)
-                amenities_id = amenities_instance.id
-                amenities_ids_list.append(amenities_id)
-
-            payload_dict = {}
-            for k, v in data.items():
-                payload_dict[k] = v
-            payload_dict['amenities'] = amenities_ids_list
-
+            payload_dict = request.data
             room_serializer = RoomsSerializer(data=payload_dict)
             if room_serializer.is_valid():
                 room_serializer.save()
@@ -41,18 +29,19 @@ class ManageRooms(APIView):
             print(traceback.format_exc())
             return internal_server_error(message='Failed to create room')
 
-    def get(self, request):
+    def get(self, request, id=None):
         try:
-            all_rooms = Room.objects.order_by('-created_date')
-            result_data = []
-            if all_rooms.exists():
-                paginator = PageNumberPagination()
-                paginator.page_size = 10
-                result_page = paginator.paginate_queryset(all_rooms, request)
-                serializer = RoomsSerializerGetter(result_page, context={'request': request}, many=True)
-                return paginator.get_paginated_response(serializer.data)
-            else:
-                return ok(data=result_data)
+             if id is not None:
+                all_rooms = Room.objects.filter(hotel=id).order_by('-created_datetime')
+                resultdata=[]
+                if all_rooms.exists():
+                    paginator = PageNumberPagination()
+                    paginator.page_size = 10
+                    result_page = paginator.paginate_queryset(all_rooms, request)
+                    serializer = RoomGetterSerializer(result_page, context={'request': request}, many=True)
+                    return paginator.get_paginated_response(serializer.data)
+                else:
+                    return ok(data=resultdata)
 
         except Exception as err:
             print(traceback.format_exc())
@@ -60,30 +49,15 @@ class ManageRooms(APIView):
 
     def patch(self, request):
         try:
-            data = request.data
+            payload_dict = request.data
             room_id = request.data.get('id', None)
             print(room_id)
             room = Room.objects.get(id=room_id)
-            amenities = data.get('amenities', [])
-            if 'amenities' in data:
-                data.pop('amenities')
-                amenities_ids_list = []
-                for name in amenities:
-                    amenities_instance, _ = Amenities.objects.get_or_create(name=name)
-                    amenities_id = amenities_instance.id
-                    amenities_ids_list.append(amenities_id)
-                    print(amenities_ids_list)
-                payload_dict = {}
-                for k, v in data.items():
-                    payload_dict[k] = v
-                payload_dict['amenities'] = amenities_ids_list
-
-                print(data)
-                serializer = RoomsSerializer(room, data=payload_dict, partial=True)
-                if serializer.is_valid(raise_exception=True):
-                    serializer.save()
-                    message = f"{serializer.validated_data.get('room')} updated successfully"
-                    return ok(message=message)
+            serializer = RoomsSerializer(room, data=payload_dict, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                message = f"{serializer.validated_data.get('room')} updated successfully"
+                return ok(message=message)
         except Exception as err:
             print(traceback.format_exc())
             return internal_server_error(message='Failed to update room')
@@ -109,14 +83,13 @@ class ManageRooms(APIView):
 class ManageAmenities(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
         try:
             data = request.data
             amenities_serializer = AmenitiesSerializer(data=data)
             if amenities_serializer.is_valid():
                 amenities_serializer.save()
-                message = f"{amenities_serializer.validated_data.get('room')} created Successfully "
+                message = f"{amenities_serializer.validated_data.get('name')} created Successfully "
                 return created(message=message)
             else:
                 return bad_request(message=amenities_serializer.errors)
@@ -124,39 +97,41 @@ class ManageAmenities(APIView):
             print(traceback.format_exc())
             return internal_server_error(message='Failed to create room')
 
-    def get(self, request):
+    def get(self, request, id=None):
         try:
-            all_amenities = RoomAmeneties.objects.order_by('-created_date')
-            result_data = []
-            if all_amenities.exists():
-                paginator = PageNumberPagination()
-                paginator.page_size = 10
-                result_page = paginator.paginate_queryset(all_rooms, request)
-                serializer = AmenitiesSerializer(result_page, context={'request': request}, many=True)
-                return paginator.get_paginated_response(serializer.data)
+            if id is not None:
+                all_amenities = RoomAmeneties.objects.filter(hotel=id).order_by('-created_datetime')
+                resultdata=[]
+                if all_amenities.exists():
+                    paginator = PageNumberPagination()
+                    paginator.page_size = 10
+                    result_page = paginator.paginate_queryset(all_amenities, request)
+                    serializer = AmenetiesListingSerializer(result_page, context={'request': request}, many=True)
+                    return paginator.get_paginated_response(serializer.data)
+                else:
+                    return ok(data=resultdata)
             else:
-                return ok(data=result_data)
+                bad_request(message="Hotel id is missing")
+            
 
         except Exception as err:
             print(traceback.format_exc())
-            return internal_server_error(message='Failed to get room list')
+            return internal_server_error(message='Failed to get amenities list')
 
     def patch(self, request):
         try:
             payload_dict = request.data
             id = request.data.get('id', None)
+            print(id)
             amenity = RoomAmeneties.objects.get(id=id)
-            if  RoomAmeneties.DoesNotExist:
-                return bad_request(message='Failed to update ')
-            else:
-                serializer = RoomsSerializer(amenity, data=payload_dict, partial=True)
-                if serializer.is_valid(raise_exception=True):
-                    serializer.save()
-                    message = f"{serializer.validated_data.get('name')} updated successfully"
-                    return ok(message=message)
+            serializer = AmenetiesListingSerializer(amenity, data=payload_dict, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                message = f"{serializer.validated_data.get('name')} updated successfully"
+                return ok(message=message)
         except Exception as err:
-            print(traceback.format_exc())
-            return internal_server_error(message='Failed to update amenity')
+                print(traceback.format_exc())
+                return internal_server_error(message='Failed to update amenity')
 
     def delete(self, request):
         try:
@@ -194,18 +169,19 @@ class ManageSerices(APIView):
             print(traceback.format_exc())
             return internal_server_error(message='Failed to create service')
 
-    def get(self, request):
+    def get(self, request, id=None):
         try:
-            all_services = RoomServices.objects.order_by('-created_date')
-            result_data = []
-            if all_services.exists():
-                paginator = PageNumberPagination()
-                paginator.page_size = 10
-                result_page = paginator.paginate_queryset(all_services, request)
-                serializer = ServicesSerializer(result_page, context={'request': request}, many=True)
-                return paginator.get_paginated_response(serializer.data)
-            else:
-                return ok(data=result_data)
+             if id is not None:
+                all_amenities = RoomServices.objects.filter(hotel=id).order_by('-created_datetime')
+                resultdata=[]
+                if all_amenities.exists():
+                    paginator = PageNumberPagination()
+                    paginator.page_size = 10
+                    result_page = paginator.paginate_queryset(all_amenities, request)
+                    serializer = ServicesListingSerializer(result_page, context={'request': request}, many=True)
+                    return paginator.get_paginated_response(serializer.data)
+                else:
+                    return ok(data=resultdata)
 
         except Exception as err:
             print(traceback.format_exc())
@@ -215,8 +191,9 @@ class ManageSerices(APIView):
         try:
             payload_dict = request.data
             id = request.data.get('id', None)
+            print(payload_dict)
             service = RoomServices.objects.get(id=id)
-            serializer = RoomsSerializer(service, data=payload_dict, partial=True)
+            serializer = ServicesSerializer(service, data=payload_dict, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 message = f"{serializer.validated_data.get('name')} updated successfully"
@@ -262,18 +239,19 @@ class ManageBedTypes(APIView):
             print(traceback.format_exc())
             return internal_server_error(message='Failed to create room')
 
-    def get(self, request):
+    def get(self, request, id=None):
         try:
-            all_types = BedType.objects.order_by('-created_date')
-            result_data = []
-            if all_types.exists():
-                paginator = PageNumberPagination()
-                paginator.page_size = 10
-                result_page = paginator.paginate_queryset(all_types, request)
-                serializer = BedTypeSerializer(result_page, context={'request': request}, many=True)
-                return paginator.get_paginated_response(serializer.data)
-            else:
-                return ok(data=result_data)
+            if id is not None:
+                all_types = BedType.objects.filter(hotel=id).order_by('-created_datetime')
+                resultdata=[]
+                if all_types.exists():
+                    paginator = PageNumberPagination()
+                    paginator.page_size = 10
+                    result_page = paginator.paginate_queryset(all_types, request)
+                    serializer = BedTypeListingSerializer(result_page, context={'request': request}, many=True)
+                    return paginator.get_paginated_response(serializer.data)
+                else:
+                    return ok(data=resultdata)
 
         except Exception as err:
             print(traceback.format_exc())
