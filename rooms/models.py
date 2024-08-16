@@ -37,9 +37,12 @@ class Room(Base):
 
 class RoomBooking(Base):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='bookings')
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='hotel_booking_fk')
     guest_name = models.CharField(max_length=255)
     guest_email = models.EmailField()
     guest_phone = models.CharField(max_length=20)
+    is_check_in = models.BooleanField(default=False)
+    is_check_out = models.BooleanField(default=False)
     check_in = models.DateTimeField()
     check_out = models.DateTimeField()
 

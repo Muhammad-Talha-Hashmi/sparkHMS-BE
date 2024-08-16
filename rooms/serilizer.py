@@ -68,3 +68,27 @@ class RoomGetterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = '__all__'
+
+
+class BookingSerializer(serializers.ModelSerializer):
+    hotel = serializers.PrimaryKeyRelatedField(queryset=Hotel.objects.all(), required=True)
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(), required=True)
+
+    class Meta:
+        model = RoomBooking
+        fields = '__all__'
+        
+
+
+class RoomGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = ['id', 'room']
+
+class BookingListingSerializer(serializers.ModelSerializer):
+    hotel = HotelDropDownSerializer()
+    room = RoomGetSerializer()
+
+    class Meta:
+        model = RoomBooking
+        fields = '__all__'

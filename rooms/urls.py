@@ -10,4 +10,8 @@ urlpatterns = [
     path('services/<int:id>/', views.ManageSerices.as_view()),
     path('bedtype/', views.ManageBedTypes.as_view()),
     path('bedtype/<int:id>/', views.ManageBedTypes.as_view()),
+    path('booking/', views.ManageBooking.as_view()),
+    path('booking/<int:id>/', views.ManageBooking.as_view()),
+    path('available/', views.ManageAvailability.as_view()),
+    path('available/<int:id>/', views.ManageAvailability.as_view()),
 ]

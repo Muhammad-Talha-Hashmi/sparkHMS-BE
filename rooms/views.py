@@ -8,6 +8,7 @@ from .models import *
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from django.shortcuts import get_object_or_404
 
 
 # Create your views here.
@@ -31,17 +32,43 @@ class ManageRooms(APIView):
 
     def get(self, request, id=None):
         try:
+             status = request.GET.get('status', None)
              if id is not None:
-                all_rooms = Room.objects.filter(hotel=id).order_by('-created_datetime')
-                resultdata=[]
-                if all_rooms.exists():
-                    paginator = PageNumberPagination()
-                    paginator.page_size = 10
-                    result_page = paginator.paginate_queryset(all_rooms, request)
-                    serializer = RoomGetterSerializer(result_page, context={'request': request}, many=True)
-                    return paginator.get_paginated_response(serializer.data)
+                if status == 'booked':
+                    all_rooms = Room.objects.filter(hotel=id, status=True).order_by('-created_datetime')
+                    resultdata=[]
+                    if all_rooms.exists():
+                        paginator = PageNumberPagination()
+                        paginator.page_size = 10
+                        result_page = paginator.paginate_queryset(all_rooms, request)
+                        serializer = RoomGetterSerializer(result_page, context={'request': request}, many=True)
+                        return paginator.get_paginated_response(serializer.data)
+                    else:
+                        return ok(data=resultdata)
+                elif status == 'available':
+                    all_rooms = Room.objects.filter(hotel=id, status=False).order_by('-created_datetime')
+                    resultdata=[]
+                    if all_rooms.exists():
+                        paginator = PageNumberPagination()
+                        paginator.page_size = 10
+                        result_page = paginator.paginate_queryset(all_rooms, request)
+                        serializer = RoomGetterSerializer(result_page, context={'request': request}, many=True)
+                        return paginator.get_paginated_response(serializer.data)
+                    else:
+                        return ok(data=resultdata)
                 else:
-                    return ok(data=resultdata)
+                    all_rooms = Room.objects.filter(hotel=id).order_by('-created_datetime')
+                    resultdata=[]
+                    if all_rooms.exists():
+                        paginator = PageNumberPagination()
+                        paginator.page_size = 10
+                        result_page = paginator.paginate_queryset(all_rooms, request)
+                        serializer = RoomGetterSerializer(result_page, context={'request': request}, many=True)
+                        return paginator.get_paginated_response(serializer.data)
+                    else:
+                        return ok(data=resultdata)
+
+                
 
         except Exception as err:
             print(traceback.format_exc())
@@ -287,3 +314,113 @@ class ManageBedTypes(APIView):
         except Exception as err:
             print(traceback.format_exc())
             return internal_server_error(message='Failed to delete the type')
+
+
+# Create your views here.
+class ManageBooking(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            payload_dict = request.data
+            room_id= request.data.get('room',None)
+            if  room_id is not None:
+                room = get_object_or_404(Room, id=room_id)
+    
+                # Check if the room is available
+                if room.status:
+                    return bad_request(message="Room Id not exist")
+                
+                booking_serializer = BookingSerializer(data=payload_dict)
+                if booking_serializer.is_valid():
+                    booking_serializer.save()
+                    room.status = True
+                    room.save()
+                    message = f"{booking_serializer.validated_data.get('guest_name')} booking created Successfully "
+                    return created(message=message)
+                else:
+                    return bad_request(message=booking_serializer.errors)
+            else:
+                 return bad_request(message="Room Id is missing")
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to create booking')
+
+    def get(self, request, id=None):
+        try:
+            if id is not None:
+                all_types = RoomBooking.objects.filter(hotel=id).order_by('-created_datetime')
+                resultdata=[]
+                if all_types.exists():
+                    paginator = PageNumberPagination()
+                    paginator.page_size = 10
+                    result_page = paginator.paginate_queryset(all_types, request)
+                    serializer = BookingListingSerializer(result_page, context={'request': request}, many=True)
+                    return paginator.get_paginated_response(serializer.data)
+                else:
+                    return ok(data=resultdata)
+
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to get booking list')
+
+    def patch(self, request):
+        try:
+            payload_dict = request.data
+            id = request.data.get('id', None)
+            type = RoomBooking.objects.get(id=id)
+            serializer = BookingSerializer(type, data=payload_dict, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                message = f"{serializer.validated_data.get('name')} updated successfully"
+                return ok(message=message)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to update booking')
+
+    def delete(self, request):
+        try:
+            id = request.GET.get('id', None)
+            try:
+                booking = RoomBooking.objects.filter(id=id).first()
+                serializer = BookingSerializer(booking)
+                room_id= serializer.data.get('room',None)
+                if  room_id is not None:
+                    room = get_object_or_404(Room, id=room_id)
+        
+            except RoomBooking.DoesNotExist:
+                # Handle the case where the object is not found
+                message_data = "Type not found with id : ".format(room_id)
+                return bad_request(message=message_data)
+            else:
+                # Object was found, do something with it
+                booking.delete()
+                room.status = False
+                room.save()
+                return ok(message='Successfully deleted the booking')
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to delete the booking')
+
+# Create your views here.
+class ManageAvailability(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self, request, id=None):
+        try:
+            if id is not None:
+                all_types = Room.objects.filter(hotel=id, status=False).order_by('-created_datetime')
+                resultdata=[]
+                if all_types.exists():
+                    paginator = PageNumberPagination()
+                    paginator.page_size = 10
+                    result_page = paginator.paginate_queryset(all_types, request)
+                    serializer = RoomGetSerializer(result_page, context={'request': request}, many=True)
+                    return paginator.get_paginated_response(serializer.data)
+                else:
+                    return ok(data=resultdata)
+
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to get room list')
