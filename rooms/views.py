@@ -111,6 +111,33 @@ class ManageRooms(APIView):
             print(traceback.format_exc())
             return internal_server_error(message='Failed to delete the room')
 
+
+# Create your views here.
+class ManageListingRooms(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id=None):
+        try:
+             status = request.GET.get('status', None)
+             if id is not None:
+                    all_rooms = Room.objects.filter(hotel=id).order_by('-created_datetime')
+                    resultdata=[]
+                    if all_rooms.exists():
+                        paginator = PageNumberPagination()
+                        paginator.page_size = 10
+                        result_page = paginator.paginate_queryset(all_rooms, request)
+                        serializer = RoomGetSerializer(result_page, context={'request': request}, many=True)
+                        return paginator.get_paginated_response(serializer.data)
+                    else:
+                        return ok(data=resultdata)
+
+                
+
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to get room list')
+
 # Create your views here.
 class ManageAmenities(APIView):
     authentication_classes = [JWTAuthentication]
@@ -450,3 +477,18 @@ class ManageAvailability(APIView):
         except Exception as err:
             print(traceback.format_exc())
             return internal_server_error(message='Failed to get room list')
+
+# Create your views here.
+class BookingDetail(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self, request, id=None):
+        try:
+             if id is not None:
+                booking = RoomBooking.objects.filter(id=id).first()
+                resultdata=[]
+                serializer = BookingDetailSerializer(booking)
+                return ok(data=serializer.data)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to get Booking details')

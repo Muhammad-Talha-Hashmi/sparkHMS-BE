@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import *
 from organization.models import Hotel
-from organization.serializer import HotelDropDownSerializer
+from organization.serializer import HotelDropDownSerializer, HotelCreateSerializer
 
 class RoomsSerializer(serializers.ModelSerializer):
     hotel = serializers.PrimaryKeyRelatedField(queryset=Hotel.objects.all(), required=True)
@@ -92,3 +92,12 @@ class BookingListingSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomBooking
         fields = '__all__'
+
+
+class BookingDetailSerializer(serializers.ModelSerializer):
+    room = RoomGetterSerializer()
+
+    class Meta:
+        model = RoomBooking
+        fields = '__all__'
+
