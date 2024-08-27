@@ -9,6 +9,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
+from django.utils.dateparse import parse_datetime
+from django.db.models import Q
+from django.utils import timezone
+
+
 
 
 # Create your views here.
@@ -327,11 +332,6 @@ class ManageBooking(APIView):
             room_id= request.data.get('room',None)
             if  room_id is not None:
                 room = get_object_or_404(Room, id=room_id)
-    
-                # Check if the room is available
-                if room.status:
-                    return bad_request(message="Room Id not exist")
-                
                 booking_serializer = BookingSerializer(data=payload_dict)
                 if booking_serializer.is_valid():
                     booking_serializer.save()
@@ -409,14 +409,40 @@ class ManageAvailability(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, id=None):
         try:
+            nop = request.GET.get('nop', None)
+            startDate = request.GET.get('startDate', None)
+            endDate = request.GET.get('endDate', None)
+            if startDate:
+                startDate = parse_datetime(startDate)
+                if startDate is not None:
+                    startDate = timezone.make_aware(startDate)
+            
+            if endDate:
+                endDate = parse_datetime(endDate)
+                if endDate is not None:
+                    endDate = timezone.make_aware(endDate)
             if id is not None:
-                all_types = Room.objects.filter(hotel=id, status=False).order_by('-created_datetime')
-                resultdata=[]
-                if all_types.exists():
+                # Base queryset for available rooms in the specified hotel
+                rooms = Room.objects.filter(hotel=id)
+                print(rooms)
+                # Filter by room capacity if 'nop' is provided
+                if nop:
+                    rooms = rooms.filter(capacity__gte=int(nop))
+                print(rooms)
+                # Filter by availability based on booking dates if startDate and endDate are provided
+                if startDate and endDate:
+                    rooms = rooms.exclude(
+                        Q(bookings__check_in__lt=endDate) & Q(bookings__check_out__gt=startDate)
+                    )
+
+                rooms = rooms.order_by('-created_date')
+                
+                resultdata = []
+                if rooms.exists():
                     paginator = PageNumberPagination()
                     paginator.page_size = 10
-                    result_page = paginator.paginate_queryset(all_types, request)
-                    serializer = RoomGetSerializer(result_page, context={'request': request}, many=True)
+                    result_page = paginator.paginate_queryset(rooms, request)
+                    serializer = RoomGetterSerializer(result_page, context={'request': request}, many=True)
                     return paginator.get_paginated_response(serializer.data)
                 else:
                     return ok(data=resultdata)

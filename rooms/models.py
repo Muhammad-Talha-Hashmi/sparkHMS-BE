@@ -27,6 +27,7 @@ class Room(Base):
     room_type = models.CharField(max_length=60, null=True, blank=True)
     number_of_bed =models.IntegerField(default=1)
     bed_type = models.ForeignKey(BedType, null=True, blank=True, on_delete=models.CASCADE,)
+    capacity = models.IntegerField(default=1)
     price = models.CharField(max_length=120, null=True, blank=True)
     amenities = models.ManyToManyField(RoomAmeneties, blank=True)
     services = models.ManyToManyField(RoomServices, blank=True)
