@@ -2,6 +2,8 @@ from django.db import models
 
 from organization.models import Hotel, HotelInventory
 from utils.base_model import Base
+from django.utils import timezone
+
 
 
 
@@ -46,7 +48,16 @@ class RoomBooking(Base):
     is_check_out = models.BooleanField(default=False)
     check_in = models.DateTimeField()
     check_out = models.DateTimeField()
+    
+    def update_check_in_status(self, is_check_in_status):
+        self.is_check_in = is_check_in_status
+        self.check_in = timezone.now() if is_check_in_status else self.check_in
+        self.save()
 
+    def update_check_out_status(self, is_check_out_status):
+        self.is_check_out = is_check_out_status
+        self.check_out = timezone.now() if is_check_out_status else self.check_out
+        self.save()
     def __str__(self):
         return f"{self.guest_name} - {self.room.name} ({self.check_in} to {self.check_out})"
 
@@ -57,7 +68,14 @@ class Invoice(Base):
     invoice_date = models.DateTimeField(auto_now_add=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     is_paid = models.BooleanField(default=False)
-
+    
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:  # Only set the invoice number if it hasn't been set yet
+            self.invoice_number = f"INV-{self.id}"
+        super().save(*args, **kwargs)
+        if not self.invoice_number:  # Update invoice number after saving if it depends on the id
+            self.invoice_number = f"INV-{self.id}"
+            self.save()  # Save again to persist the updated invoice number
     def __str__(self):
         return f"Invoice {self.invoice_number} - {self.booking.guest_name}"
 

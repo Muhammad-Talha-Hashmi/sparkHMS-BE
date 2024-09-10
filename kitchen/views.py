@@ -7,9 +7,153 @@ from rest_framework import status
 import traceback
 from .models import *
 from .serializers import *
+from utils.responses import internal_server_error, bad_request, created, not_found, ok
+
 
 
 # Create your views here.
+class ManageKitchen(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            data = request.data
+            serializer = KitchenSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                message = f"Kitchen created successfully"
+                return created(message= message)
+            else:
+                return bad_request(message= serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to create kitchen")
+
+    def get(self, request, id=None):
+        try:
+            if id is not None:
+                all_expenses = Kitchen.objects.filter(hotel=id).order_by('-created_datetime')
+                paginator = PageNumberPagination()
+                paginator.page_size = 10
+                result_page = paginator.paginate_queryset(all_expenses, request)
+                serializer = KitchenGetterSerializer(result_page, context={'request': request}, many=True)
+                return paginator.get_paginated_response(serializer.data)
+            else:
+                return bad_request(message="Hotel id is missing")
+        except Exception as err:
+            print(traceback.format_exc())
+            return Response({"message": "Failed to get kitchen expenses list"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def patch(self, request):
+        try:
+            data = request.data
+            id = data.get('id', None)
+            kitchenData = Kitchen.objects.filter(kitchen=id).get(id=id)
+            serializer = KitchenSerializer(kitchenData, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                message = f"Kitchen updated successfully"
+                return ok(message="Successfully updated")
+            else:
+                return bad_request(message=serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to update kitchen expense")
+
+    def delete(self, request):
+        try:
+            id = request.GET.get('id', None)
+            kitchen_intance = Kitchen.objects.filter(id=id).first()
+            if not kitchen_intance:
+                return bad_request(message= f"Kitchen not found with id: {id}")
+            kitchen_intance.delete()
+            return ok(message= "Successfully deleted the kitchen")
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to delete kitchen")
+
+# Create your views here.
+class ManageKitchenInventory(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            data = request.data
+            serializer = KitchenInventorySerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                message = f"Kitchen created successfully"
+                return created(message= message)
+            else:
+                return bad_request(message= serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to create kitchen")
+
+    def get(self, request, id=None):
+        try:
+            if id is not None:
+                all_expenses = KitchenInventory.objects.order_by('-created_datetime')
+                paginator = PageNumberPagination()
+                paginator.page_size = 10
+                result_page = paginator.paginate_queryset(all_expenses, request)
+                serializer = KitchenInventoryGetterSerializer(result_page, context={'request': request}, many=True)
+                return paginator.get_paginated_response(serializer.data)
+            else:
+                return bad_request(message="Kitchen id is missing")
+        except Exception as err:
+            print(traceback.format_exc())
+            return Response({"message": "Failed to get kitchen expenses list"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def patch(self, request):
+        try:
+            data = request.data
+            id = data.get('id', None)
+            kitchen_inevtory = KitchenInventory.objects.get(id=id)
+            serializer = KitchenInventorySerializer(kitchen_inevtory, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                message = f"Kitchen updated successfully"
+                return ok(message="Successfully updated")
+            else:
+                return bad_request(message=serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to update kitchen expense")
+
+    def delete(self, request):
+        try:
+            id = request.GET.get('id', None)
+            kitchen_intance = KitchenInventory.objects.filter(id=id).first()
+            if not kitchen_intance:
+                return bad_request(message= f"Kitchen not found with id: {id}")
+            kitchen_intance.delete()
+            return ok(message= "Successfully deleted the kitchen")
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to delete kitchen")
+
+class ManageKitchenRestock(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            data = request.data
+            serializer = KitchenRestockSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                message = f"Restock Add successfully"
+                return created(message= message)
+            else:
+                return bad_request(message= serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to add restock")
 
 class ManageKitchenExpense(APIView):
     authentication_classes = [JWTAuthentication]
@@ -22,26 +166,27 @@ class ManageKitchenExpense(APIView):
             if expense_serializer.is_valid():
                 expense_serializer.save()
                 message = f"Kitchen expense created successfully"
-                return Response({"message": message}, status=status.HTTP_201_CREATED)
+                return created(message= message)
             else:
-                return Response({"errors": expense_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return bad_request(message= serializer.errors)
         except Exception as err:
             print(traceback.format_exc())
-            return Response({"message": "Failed to create kitchen expense"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return internal_server_error(message= "Failed to add Expense")
 
-    def get(self, request):
+    def get(self, request, id=None):
         try:
-            all_expenses = KitchenExpense.objects.order_by('-date')
-            paginator = PageNumberPagination()
-            paginator.page_size = 10
-            result_page = paginator.paginate_queryset(all_expenses, request)
-            serializer = KitchenExpenseSerializer(result_page, context={'request': request}, many=True)
-            return paginator.get_paginated_response(serializer.data)
+            if id is not None:
+                all_expenses = KitchenExpense.objects.filter(kitchen=id).order_by('-date')
+                paginator = PageNumberPagination()
+                paginator.page_size = 10
+                result_page = paginator.paginate_queryset(all_expenses, request)
+                serializer = KitchenExpenseGetterSerializer(result_page, context={'request': request}, many=True)
+                return paginator.get_paginated_response(serializer.data)
+            else:
+                return bad_request(message="Kitchen id is missing")
         except Exception as err:
             print(traceback.format_exc())
-            return Response({"message": "Failed to get kitchen expenses list"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return internal_server_error(message= "Failed to get Expense")
 
     def patch(self, request):
         try:
@@ -86,26 +231,27 @@ class ManageKitchenRevenue(APIView):
             if revenue_serializer.is_valid():
                 revenue_serializer.save()
                 message = f"Kitchen revenue created successfully"
-                return Response({"message": message}, status=status.HTTP_201_CREATED)
+                return created(message= message)
             else:
-                return Response({"errors": revenue_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return bad_request(message=revenue_serializer.errors)
         except Exception as err:
             print(traceback.format_exc())
-            return Response({"message": "Failed to create kitchen revenue"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return internal_server_error(message= "Failed to create kitchen revenue")
 
-    def get(self, request):
+    def get(self, request, id=None):
         try:
-            all_revenues = KitchenRevenue.objects.order_by('-date')
-            paginator = PageNumberPagination()
-            paginator.page_size = 10
-            result_page = paginator.paginate_queryset(all_revenues, request)
-            serializer = KitchenRevenueSerializer(result_page, context={'request': request}, many=True)
-            return paginator.get_paginated_response(serializer.data)
+            if id is not None:
+                all_expenses = KitchenRevenue.objects.filter(kitchen=id).order_by('-date')
+                paginator = PageNumberPagination()
+                paginator.page_size = 10
+                result_page = paginator.paginate_queryset(all_expenses, request)
+                serializer = KitchenRevenueGetterSerializer(result_page, context={'request': request}, many=True)
+                return paginator.get_paginated_response(serializer.data)
+            else:
+                return bad_request(message="Kitchen id is missing")
         except Exception as err:
             print(traceback.format_exc())
-            return Response({"message": "Failed to get kitchen revenues list"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return internal_server_error(message= "Failed to get kitchen revenue list")
 
     def patch(self, request):
         try:
@@ -116,27 +262,24 @@ class ManageKitchenRevenue(APIView):
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 message = f"Kitchen revenue updated successfully"
-                return Response({"message": message}, status=status.HTTP_200_OK)
+                return ok(message= message)
             else:
-                return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return bad_request(message=serializer.errors)
         except Exception as err:
             print(traceback.format_exc())
-            return Response({"message": "Failed to update kitchen revenue"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return internal_server_error(message= "Failed to update kitchen revenue")
 
     def delete(self, request):
         try:
             revenue_id = request.GET.get('id', None)
             revenue = KitchenRevenue.objects.filter(id=revenue_id).first()
             if not revenue:
-                return Response({"message": f"Kitchen revenue not found with id: {revenue_id}"},
-                                status=status.HTTP_404_NOT_FOUND)
+                return bad_request(message= f"Kitchen revenue not found with id: {revenue_id}")
             revenue.delete()
-            return Response({"message": "Successfully deleted the kitchen revenue"}, status=status.HTTP_200_OK)
+            return ok(message= "Successfully deleted the kitchen revenue")
         except Exception as err:
             print(traceback.format_exc())
-            return Response({"message": "Failed to delete kitchen revenue"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return internal_server_error(message= "Failed to delete kitchen revenue")
 
 
 class ManageKitchenFinancialStatement(APIView):
@@ -145,18 +288,28 @@ class ManageKitchenFinancialStatement(APIView):
 
     def post(self, request):
         try:
-            data = request.data
+            data= request.data
+            kitchen = data.get('kitchen')
+            period_start_str = data.get('period_start')
+            period_end_str = data.get('period_end')
             financial_statement_serializer = KitchenFinancialStatementSerializer(data=data)
+            expenses = KitchenExpense.objects.filter(kitchen=kitchen, date__range=[period_start_str, period_end_str])
+            revenues = KitchenRevenue.objects.filter(kitchen=kitchen, date__range=[period_start_str, period_end_str])
+            total_expenses = sum(expense.amount for expense in expenses)
+            total_revenues = sum(revenue.amount for revenue in revenues)
+            net_profit = total_revenues - total_expenses
+            data['total_expenses']=total_expenses
+            data['total_revenues']=total_revenues
+            data['net_profit']=net_profit
             if financial_statement_serializer.is_valid():
                 financial_statement_serializer.save()
                 message = f"Kitchen financial statement created successfully"
-                return Response({"message": message}, status=status.HTTP_201_CREATED)
+                return created(data=financial_statement_serializer.data, message=message)
             else:
-                return Response({"errors": financial_statement_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return bad_request(message=financial_statement_serializer.errors)
         except Exception as err:
             print(traceback.format_exc())
-            return Response({"message": "Failed to create kitchen financial statement"},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return internal_server_error(message= "Failed to create kitchen financial statement")
 
     def get(self, request):
         try:

@@ -17,4 +17,6 @@ urlpatterns = [
     path('available/', views.ManageAvailability.as_view()),
     path('available/<int:id>/', views.ManageAvailability.as_view()),
     path('bookingById/<int:id>/', views.BookingDetail.as_view()),
+    path('invoiceById/<int:id>/', views.InvoiceDetail.as_view()),
+    path('isCheckInOut/', views.CheckInOut.as_view()),
 ]

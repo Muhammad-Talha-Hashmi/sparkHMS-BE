@@ -361,9 +361,19 @@ class ManageBooking(APIView):
                 room = get_object_or_404(Room, id=room_id)
                 booking_serializer = BookingSerializer(data=payload_dict)
                 if booking_serializer.is_valid():
-                    booking_serializer.save()
+                    booking = booking_serializer.save()
                     room.status = True
                     room.save()
+                    total_amount = room.price
+                    # Create an invoice
+                    invoice = Invoice.objects.create(
+                        booking=booking,
+                        amount=total_amount  # Assuming total_amount is in the payload
+                    )
+                    
+                    # Update invoice_number after the first save
+                    invoice.invoice_number = f"INV-{invoice.id}"
+                    invoice.save()
                     message = f"{booking_serializer.validated_data.get('guest_name')} booking created Successfully "
                     return created(message=message)
                 else:
@@ -489,6 +499,42 @@ class BookingDetail(APIView):
                 resultdata=[]
                 serializer = BookingDetailSerializer(booking)
                 return ok(data=serializer.data)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to get Booking details')
+
+# Create your views here.
+class InvoiceDetail(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self, request, id=None):
+        try:
+             if id is not None:
+                invoice_instance = Invoice.objects.filter(booking=id).first()
+                resultdata=[]
+                serializer = InvoiceDetailSerializer(invoice_instance)
+                return ok(data=serializer.data)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to get Invoice details')
+
+# Create your views here.
+class CheckInOut(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            booking_id= request.data.get('id',None)
+            print(booking_id)
+            check_in_status= request.data.get('checkIn',None)
+            booking = get_object_or_404(RoomBooking, id=booking_id)
+
+            if check_in_status:
+                booking.update_check_in_status(True)
+                return ok(message="Successfully check in ")
+            else:
+                booking.update_check_out_status(True)
+                return ok(message="Successfully check out ")
         except Exception as err:
             print(traceback.format_exc())
             return internal_server_error(message='Failed to get Booking details')

@@ -101,3 +101,10 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         model = RoomBooking
         fields = '__all__'
 
+
+class InvoiceDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Invoice
+        fields = '__all__'
+
