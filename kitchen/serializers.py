@@ -65,3 +65,30 @@ class KitchenFinancialStatementSerializer(serializers.ModelSerializer):
     class Meta:
         model = KitchenFinancialStatement
         fields = '__all__'
+
+class KitchenCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+class KitchenMenuItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MenuItem
+        fields = '__all__'
+
+class KitchenCategoryGetterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name']
+
+class KitchenMenuItemGetterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MenuItem
+        fields = ['id', 'name', 'description','price']
+
+class KitchenCategoryMenuSerializer(serializers.ModelSerializer):
+    menu_items = KitchenMenuItemGetterSerializer(many=True)  # Nested serializer for menu items
+
+    class Meta:
+        model = Category
+        fields = ['id','name', 'menu_items']

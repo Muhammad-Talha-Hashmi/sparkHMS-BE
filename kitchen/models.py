@@ -86,3 +86,21 @@ class KitchenFinancialStatement(Base):
     net_profit = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     def __str__(self):
         return f"Kitchen Financial Statement ({self.period_start} to {self.period_end}) for {self.kitchen.name} in {self.hotel.name}"
+
+from django.db import models
+
+class Category(Base):
+    kitchen = models.ForeignKey(Kitchen, on_delete=models.CASCADE, related_name='kitchen_category')
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+class MenuItem(Base):
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='menu_items')
+
+    def __str__(self):
+        return self.name

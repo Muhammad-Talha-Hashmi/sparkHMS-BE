@@ -15,7 +15,6 @@ from utils.responses import internal_server_error, bad_request, created, not_fou
 class ManageKitchen(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
         try:
             data = request.data
@@ -33,12 +32,9 @@ class ManageKitchen(APIView):
     def get(self, request, id=None):
         try:
             if id is not None:
-                all_expenses = Kitchen.objects.filter(hotel=id).order_by('-created_datetime')
-                paginator = PageNumberPagination()
-                paginator.page_size = 10
-                result_page = paginator.paginate_queryset(all_expenses, request)
-                serializer = KitchenGetterSerializer(result_page, context={'request': request}, many=True)
-                return paginator.get_paginated_response(serializer.data)
+                kitchen = Kitchen.objects.filter(hotel=id).order_by('-created_datetime').first()
+                serializer = KitchenGetterSerializer(kitchen)
+                return ok(serializer.data)
             else:
                 return bad_request(message="Hotel id is missing")
         except Exception as err:
@@ -355,3 +351,148 @@ class ManageKitchenFinancialStatement(APIView):
             print(traceback.format_exc())
             return Response({"message": "Failed to delete kitchen financial statement"},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class ManageKitchenCategory(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            data = request.data
+            revenue_serializer = KitchenCategorySerializer(data=data)
+            if revenue_serializer.is_valid():
+                revenue_serializer.save()
+                message = f"Kitchen category created successfully"
+                return created(message= message)
+            else:
+                return bad_request(message=revenue_serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to create kitchen category")
+
+    def get(self, request, id=None):
+        try:
+            if id is not None:
+                all_category = Category.objects.filter(kitchen=id).order_by('-created_datetime')
+                paginator = PageNumberPagination()
+                paginator.page_size = 10
+                result_page = paginator.paginate_queryset(all_category, request)
+                serializer = KitchenCategoryGetterSerializer(result_page, context={'request': request}, many=True)
+                return paginator.get_paginated_response(serializer.data)
+            else:
+                return bad_request(message="Category id is missing")
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to get category list")
+
+    def patch(self, request):
+        try:
+            data = request.data
+            cat_id = data.get('id', None)
+            cat = Category.objects.get(id=cat_id)
+            serializer = KitchenCategorySerializer(cat, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                message = f"Kitchen category updated successfully"
+                return ok(message= message)
+            else:
+                return bad_request(message=serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to update kitchen category")
+
+    def delete(self, request):
+        try:
+            category_id = request.GET.get('id', None)
+            category = Category.objects.filter(id=category_id).first()
+            if not category:
+                return bad_request(message= f"Kitchen category not found with id: {category_id}")
+            category.delete()
+            return ok(message= "Successfully deleted the kitchen category")
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to delete kitchen category")
+
+class ManageKitchenMenuItem(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            data = request.data
+            menu_serializer = KitchenMenuItemSerializer(data=data)
+            if menu_serializer.is_valid():
+                menu_serializer.save()
+                message = f"Kitchen menu created successfully"
+                return created(message= message)
+            else:
+                return bad_request(message=menu_serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to create kitchen menu")
+
+    def get(self, request, id=None):
+        try:
+            if id is not None:
+                all_expenses = MenuItem.objects.filter(category=id).order_by('-created_datetime')
+                paginator = PageNumberPagination()
+                paginator.page_size = 10
+                result_page = paginator.paginate_queryset(all_expenses, request)
+                serializer = KitchenMenuItemGetterSerializer(result_page, context={'request': request}, many=True)
+                return paginator.get_paginated_response(serializer.data)
+            else:
+                return bad_request(message="Kitchen id is missing")
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to get kitchen menu list")
+
+    def patch(self, request):
+        try:
+            data = request.data
+            menu_id = data.get('id', None)
+            menu = MenuItem.objects.get(id=menu_id)
+            serializer = KitchenMenuItemSerializer(menu, data=data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                message = f"Kitchen menu updated successfully"
+                return ok(message= message)
+            else:
+                return bad_request(message=serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to update kitchen menu")
+
+    def delete(self, request):
+        try:
+            menu_id = request.GET.get('id', None)
+            menu = MenuItem.objects.filter(id=menu_id).first()
+            if not menu:
+                return bad_request(message= f"Kitchen menu not found with id: {menu_id}")
+            menu.delete()
+            return ok(message= "Successfully deleted the kitchen menu")
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message= "Failed to delete kitchen menu")
+
+# Create your views here.
+class ManageKitchenAllMenuItem(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id=None):
+        try:
+            if id is not None:
+                # Get all categories related to this kitchen along with their associated menu items
+                categories = Category.objects.filter(kitchen=id).prefetch_related('menu_items')
+
+                # Use the serializer to format the data
+                serialized_data = KitchenCategoryMenuSerializer(categories, many=True).data
+
+                return ok(data=serialized_data)
+            else:
+                return bad_request(message="Hotel id is missing")
+        except Exception as err:
+            print(traceback.format_exc())
+            return Response({"message": "Failed to get kitchen expenses list"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

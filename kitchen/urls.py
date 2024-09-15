@@ -12,5 +12,9 @@ urlpatterns = [
     path('revenue/', views.ManageKitchenRevenue.as_view()),
     path('revenue/<int:id>/', views.ManageKitchenRevenue.as_view()),
     path('financialStatement/', views.ManageKitchenFinancialStatement.as_view()),
-
+    path('category/', views.ManageKitchenCategory.as_view()),
+    path('category/<int:id>/', views.ManageKitchenCategory.as_view()),
+    path('menuItem/', views.ManageKitchenMenuItem.as_view()),
+    path('menuItem/<int:id>/', views.ManageKitchenMenuItem.as_view()),
+    path('getAllMenu/<int:id>/', views.ManageKitchenAllMenuItem.as_view()),
 ]
