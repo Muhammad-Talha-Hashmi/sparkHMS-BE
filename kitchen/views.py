@@ -164,7 +164,7 @@ class ManageKitchenExpense(APIView):
                 message = f"Kitchen expense created successfully"
                 return created(message= message)
             else:
-                return bad_request(message= serializer.errors)
+                return bad_request(message= expense_serializer.errors)
         except Exception as err:
             print(traceback.format_exc())
             return internal_server_error(message= "Failed to add Expense")
@@ -309,12 +309,24 @@ class ManageKitchenFinancialStatement(APIView):
 
     def get(self, request):
         try:
-            all_statements = KitchenFinancialStatement.objects.order_by('-period_start')
-            paginator = PageNumberPagination()
-            paginator.page_size = 10
-            result_page = paginator.paginate_queryset(all_statements, request)
-            serializer = KitchenFinancialStatementSerializer(result_page, context={'request': request}, many=True)
-            return paginator.get_paginated_response(serializer.data)
+            kitchen = request.GET.get('kitchen')
+            period_start_str = request.GET.get('period_start')
+            period_end_str = request.GET.get('period_end')
+            expenses = KitchenExpense.objects.filter(kitchen=kitchen, date__range=[period_start_str, period_end_str])
+            revenues = KitchenRevenue.objects.filter(kitchen=kitchen, date__range=[period_start_str, period_end_str])
+            total_expenses = sum(expense.amount for expense in expenses)
+            total_revenues = sum(revenue.amount for revenue in revenues)
+            net_profit = total_revenues - total_expenses
+            data_to_send={
+                'kitchen':kitchen,
+                'period_start': period_start_str,
+                'period_end': period_end_str,
+                'total_expenses': total_expenses,
+                'total_revenues': total_revenues,
+                'net_profit': net_profit,
+            }
+            return ok(data=data_to_send)
+            
         except Exception as err:
             print(traceback.format_exc())
             return Response({"message": "Failed to get kitchen financial statements list"},
