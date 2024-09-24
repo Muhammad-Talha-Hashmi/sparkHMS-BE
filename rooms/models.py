@@ -1,6 +1,7 @@
 from django.db import models
 
-from organization.models import Hotel, HotelInventory
+from organization.models import Hotel
+from kitchen.models import MenuItem,Kitchen
 from utils.base_model import Base
 from django.utils import timezone
 
@@ -82,6 +83,7 @@ class Invoice(Base):
 
 class Order(Base):
     booking = models.ForeignKey(RoomBooking, on_delete=models.CASCADE, related_name='orders')
+    kitchen = models.ForeignKey(Kitchen, on_delete=models.CASCADE, related_name='kitchen_order')
     order_date = models.DateTimeField(auto_now_add=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     is_paid = models.BooleanField(default=False)
@@ -92,8 +94,7 @@ class Order(Base):
 
 class OrderItem(Base):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
-    inventory_item = models.ForeignKey(HotelInventory, null=True, blank=True, on_delete=models.SET_NULL)
-    # kitchen_item = models.ForeignKey(KitchenInventory, null=True, blank=True, on_delete=models.SET_NULL)
+    kitchen_item = models.ForeignKey(MenuItem, null=True, blank=True, on_delete=models.SET_NULL)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
 

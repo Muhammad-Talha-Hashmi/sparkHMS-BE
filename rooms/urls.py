@@ -19,4 +19,6 @@ urlpatterns = [
     path('bookingById/<int:id>/', views.BookingDetail.as_view()),
     path('invoiceById/<int:id>/', views.InvoiceDetail.as_view()),
     path('isCheckInOut/', views.CheckInOut.as_view()),
+    path('orderKitchen/', views.KitchenOrderView.as_view()),
+    path('orderKitchen/<int:id>/', views.KitchenOrderView.as_view()),
 ]

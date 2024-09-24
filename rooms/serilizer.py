@@ -108,3 +108,22 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
         model = Invoice
         fields = '__all__'
 
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
+
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = '__all__'
+
+
+class OrderGetterSerializer(serializers.ModelSerializer):
+    order_items = OrderItemSerializer(many=True)  # Include related order items
+
+    class Meta:
+        model = Order
+        fields = ['id', 'booking', 'kitchen', 'order_date', 'total_amount', 'is_paid', 'order_items']

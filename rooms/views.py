@@ -538,3 +538,94 @@ class CheckInOut(APIView):
         except Exception as err:
             print(traceback.format_exc())
             return internal_server_error(message='Failed to get Booking details')
+
+# Create your views here.
+class KitchenOrderView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Get order data
+            order_data = request.data.get('order')
+            # Get order items data
+            order_items_data = request.data.get('order_items')
+
+            # Serialize the order data
+            order_serializer = OrderSerializer(data=order_data)
+            
+            if order_serializer.is_valid():
+                order = order_serializer.save()  # Save the order
+
+                # Process and save each order item
+                for item_data in order_items_data:
+                    item_data['order'] = order.id  # Set the order foreign key
+                    order_item_serializer = OrderItemSerializer(data=item_data)
+                    
+                    if order_item_serializer.is_valid():
+                        order_item_serializer.save()  # Save the order item
+                    else:
+                        return Response(order_item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+                return created(message="Order started")
+            return bad_request(message=order_serializer.errors)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to get Booking details')
+
+    def get(self, request, id=None):
+        try:
+            if id is not None:
+                queryset = Order.objects.all().prefetch_related('order_items')  # Prefetch related data
+                queryset = queryset.filter(booking_id=id)  # Filter by booking ID
+                resultdata=[]
+                if queryset.exists():
+                    paginator = PageNumberPagination()
+                    paginator.page_size = 10
+                    result_page = paginator.paginate_queryset(queryset, request)
+                    serializer = OrderGetterSerializer(result_page, context={'request': request}, many=True)
+                    return paginator.get_paginated_response(serializer.data)
+                else:
+                    return ok(data=resultdata)
+
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to get Order list')
+
+    def patch(self, request):
+        try:
+            payload_dict = request.data
+            id = request.data.get('id', None)
+            type = RoomBooking.objects.get(id=id)
+            serializer = BookingSerializer(type, data=payload_dict, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                message = f"{serializer.validated_data.get('name')} updated successfully"
+                return ok(message=message)
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to update booking')
+
+    def delete(self, request):
+        try:
+            id = request.GET.get('id', None)
+            try:
+                booking = RoomBooking.objects.filter(id=id).first()
+                serializer = BookingSerializer(booking)
+                room_id= serializer.data.get('room',None)
+                if  room_id is not None:
+                    room = get_object_or_404(Room, id=room_id)
+        
+            except RoomBooking.DoesNotExist:
+                # Handle the case where the object is not found
+                message_data = "Type not found with id : ".format(room_id)
+                return bad_request(message=message_data)
+            else:
+                # Object was found, do something with it
+                booking.delete()
+                room.status = False
+                room.save()
+                return ok(message='Successfully deleted the booking')
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to delete the booking')

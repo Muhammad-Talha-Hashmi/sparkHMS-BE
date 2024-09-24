@@ -8,6 +8,8 @@ import traceback
 from .models import *
 from .serializers import *
 from utils.responses import internal_server_error, bad_request, created, not_found, ok
+from rooms.models import Order
+from rooms.serilizer import OrderGetterSerializer
 
 
 
@@ -507,4 +509,29 @@ class ManageKitchenAllMenuItem(APIView):
             print(traceback.format_exc())
             return Response({"message": "Failed to get kitchen expenses list"},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ManageKitchenAllOrder(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id=None):
+        try:
+            if id is not None:
+                queryset = Order.objects.all().prefetch_related('order_items')  # Prefetch related data
+                queryset = queryset.filter(kitchen=id)  # Filter by booking ID
+                resultdata=[]
+                if queryset.exists():
+                    paginator = PageNumberPagination()
+                    paginator.page_size = 10
+                    result_page = paginator.paginate_queryset(queryset, request)
+                    serializer = OrderGetterSerializer(result_page, context={'request': request}, many=True)
+                    return paginator.get_paginated_response(serializer.data)
+                else:
+                    return ok(data=resultdata)
+
+        except Exception as err:
+            print(traceback.format_exc())
+            return internal_server_error(message='Failed to get order list')
+
 

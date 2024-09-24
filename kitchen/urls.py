@@ -17,4 +17,5 @@ urlpatterns = [
     path('menuItem/', views.ManageKitchenMenuItem.as_view()),
     path('menuItem/<int:id>/', views.ManageKitchenMenuItem.as_view()),
     path('getAllMenu/<int:id>/', views.ManageKitchenAllMenuItem.as_view()),
+    path('getOrders/<int:id>/', views.ManageKitchenAllOrder.as_view()),
 ]
